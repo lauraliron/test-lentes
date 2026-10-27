@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Test de lentes progresivas</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--ink:#16202e;--mute:#667085;--line:#dde1e8;--sel:#16202e;--selt:#fff;--accent:#16202e;
+--g0:#8a8f98;--g1:#3f8f5b;--g2:#3b6fb6;--g3:#b4473f;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10151d;--card:#1a212c;--ink:#eef1f6;--mute:#9aa4b5;--line:#2c3544;--sel:#eef1f6;--selt:#10151d}}
+:root[data-theme="dark"]{--bg:#10151d;--card:#1a212c;--ink:#eef1f6;--mute:#9aa4b5;--line:#2c3544;--sel:#eef1f6;--selt:#10151d}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Avenir Next","Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.35;padding-bottom:90px}
+main{max-width:560px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:4px 0 2px}p.sub{margin:0 0 14px;color:var(--mute);font-size:14px}
+.q{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 12px 10px;margin-bottom:10px}
+.q h2{font-size:15px;margin:0 0 8px;font-weight:650}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;color:inherit}
+.chip{border:1.5px solid var(--line);background:transparent;border-radius:10px;padding:10px 13px;min-height:44px;cursor:pointer}
+.chip.on{background:var(--sel);color:var(--selt);border-color:var(--sel)}
+.chip.off{opacity:.4;text-decoration:line-through;cursor:not-allowed}
+.res{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-top:14px;overflow:hidden}
+.band{padding:14px 14px 12px;color:#fff}
+.band b{font-size:22px;display:block}.band span{font-size:14px;opacity:.92}
+.body{padding:12px 14px 14px}
+.row{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:15px}
+.row.t{border-top:1px solid var(--line);margin-top:6px;padding-top:10px;font-size:20px;font-weight:700}
+.note{font-size:13px;color:var(--mute);margin:8px 0 0}
+.lbl{font-size:13px;color:var(--mute);margin:10px 0 6px}
+.reset{margin-top:14px;width:100%;border:1.5px solid var(--line);background:transparent;border-radius:10px;padding:12px;cursor:pointer}
+#bar{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line);display:none;justify-content:space-between;align-items:center;cursor:pointer}
+#bar .p{font-size:22px;font-weight:700}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px}
+.empty{padding:16px;color:var(--mute);font-size:14px}
+.arg{background:var(--bg);border-radius:10px;padding:10px 12px;margin-top:12px;font-size:15px}
+.arg b{display:block;margin-bottom:6px}.arg p{margin:0 0 8px}.arg p:last-child{margin:0}
+#pm{position:fixed;inset:0;z-index:20;background:var(--bg);display:none;align-items:center;justify-content:center;padding:calc(20px + env(safe-area-inset-top,0px)) 20px calc(20px + env(safe-area-inset-bottom,0px));overflow:auto}
+.pbox{width:100%;max-width:520px}.pbox h2{font-size:24px;margin:6px 0 16px}.pbox p{font-size:16px}
+.pbig{display:block;width:100%;text-align:left;border:1.5px solid var(--line);background:var(--card);border-radius:14px;padding:18px 16px;margin-bottom:10px;font-size:18px;cursor:pointer}
+.pback{background:none;border:0;color:var(--mute);padding:10px 0;font-size:15px;cursor:pointer}
+.pn{color:var(--mute);font-size:14px;margin:12px 0 0}
+.pprog{height:6px;border-radius:3px;background:var(--line);overflow:hidden}.pprog i{display:block;height:100%;background:var(--sel)}
+</style></head><body><main>
+<h1>Test de lentes progresivas</h1>
+<p class="sub">Toca la respuesta del cliente. La recomendación y el precio aparecen abajo.</p>
+<button class="reset" id="pbtn" style="margin:0 0 12px">Que lo responda el paciente en el móvil</button>
+<div id="qs"></div>
+<section class="res" id="res"></section>
+<button class="reset" id="reset">Empezar con otro cliente</button>
+</main>
+<div id="pm"></div><div id="bar"><div><div id="bt" style="font-size:14px"></div></div><div class="p" id="bp"></div></div>
+<script>
+const Q=[
+{id:'exp',t:'¿Es su primera progresiva?',p:1,o:[['Sí, la primera',1],['No, la lleva bien',0],['No, tuvo problemas',2]]},
+{id:'pan',t:'¿Horas al día con pantallas?',p:1,o:[['Menos de 2 h',0],['De 2 a 5 h',1],['Más de 5 h',2]]},
+{id:'noc',t:'¿Conduce de noche o hace trabajo visual exigente?',p:1,o:[['No',0],['A veces',1],['A menudo',2]]},
+{id:'pri',t:'¿Qué le importa más?',p:1,o:[['El precio',0],['Equilibrio',1],['Comodidad y campo visual',2]]},
+{id:'ext',t:'¿Aire libre o cambios interior/exterior?',p:0,o:[['No',0],['A veces',1],['A diario',2]]},
+{id:'rep',t:'¿Quiere otra gafa?',p:0,o:[['No',0],['De repuesto',1],['De sol',2]]},
+{id:'gra',t:'Graduación (esfera mayor)',p:0,o:[['Hasta 2 D',0],['De 2 a 4 D',1],['De 4 a 6 D',2],['Más de 6 D',3]]},
+{id:'ast',t:'Astigmatismo (cilindro)',p:0,o:[['Hasta 2 D',0],['Más de 2 D',1]]}
+];
+const GN=['gris','verde','azul','roja'],GC=['--g0','--g1','--g2','--g3'];
+const PR={ // base, 2ª gafa, Komparte
+0:{'1.5':[229,50,99],'1.6':[289,80,169],'1.67':[349,120,189]},
+1:{'1.5':[329,50,219],'1.6':[389,150,259],'1.67':[419,190,289]},
+2:{'1.5':[419,180,309],'1.6':[479,230,339],'1.67':[509,260,359],'1.74':[549,290,399]},
+3:{'1.5':[499,270,349],'1.6':[549,320,399],'1.67':[619,330,469],'1.74':[719,350,499]}};
+const T={at:['Ar Top',20],ap:['Artop+',40],bl:['Blue',30],fh:['Foto Hc',80],fa:['Foto Ar',110]};
+const ALL=['at','ap','bl','fh','fa'];
+const AV={0:{'1.5':ALL,'1.6':['at','ap','bl','fh'],'1.67':['at','fa']},
+1:{'1.5':ALL,'1.6':ALL,'1.67':['bl','fa']},
+2:{'1.5':ALL,'1.6':['at','ap','bl','fh'],'1.67':['at','ap','fa'],'1.74':['fa']},
+3:{'1.5':['at','ap','bl','fa'],'1.6':['at','ap','bl','fa'],'1.67':['at','ap','bl','fa'],'1.74':['ap','bl']}};
+let ans={},tsel=new Set(),extra=null;
+const $=s=>document.querySelector(s),eur=n=>n+' €';
+function build(){
+ $('#qs').innerHTML=Q.map(q=>`<div class="q"><h2>${q.t}</h2><div class="opts">${q.o.map((o,i)=>`<button class="chip" data-q="${q.id}" data-i="${i}">${o[0]}</button>`).join('')}</div></div>`).join('');
+ document.querySelectorAll('#qs .chip').forEach(b=>b.onclick=()=>{ans[b.dataset.q]=+b.dataset.i;extra=null;suggest();paint()});
+}
+function val(id){const q=Q.find(x=>x.id==id);return id in ans?q.o[ans[id]][1]:null}
+function calc(){
+ const sc=Q.filter(q=>q.p),done=sc.every(q=>q.id in ans)&&('gra' in ans)&&('ast' in ans);
+ if(!done)return null;
+ const pts=sc.reduce((s,q)=>s+val(q.id),0);
+ let g=pts<=2?0:pts<=4?1:pts<=6?2:3,note='';
+ const ix=['1.5','1.6','1.67','1.74'][Math.min(3,val('gra')+val('ast'))];
+ if(val('ast')==1&&val('gra')<3)note='Astigmatismo de más de 2 D: se sube un índice.';
+ if(!PR[g][ix]){g=2;note='El 1.74 solo existe desde la gama azul, por eso se sube a azul.'}
+ return {pts,g,ix,note,pr:PR[g][ix],av:AV[g][ix]};
+}
+function suggest(){
+ tsel=new Set();const r=calc();if(!r)return;
+ const s=[];
+ if(val('pan')==2)s.push('bl');
+ if(val('noc')==1)s.push('at');if(val('noc')==2)s.push('ap');
+ if(val('ext')==1)s.push('fh');if(val('ext')==2)s.push('fa');
+ s.forEach(k=>{if(r.av.includes(k))tsel.add(k)});
+ const rp=val('rep');if(rp==1)extra='s';
+}
+function toggle(k){
+ if(tsel.has(k)){tsel.delete(k);return}
+ if(k=='at')tsel.delete('ap');if(k=='ap')tsel.delete('at');
+ if(k=='fh')tsel.delete('fa');if(k=='fa')tsel.delete('fh');
+ tsel.add(k);
+}
+const GA=['Le recomiendo una progresiva de gama básica: le da visión nítida de lejos, de cerca y a distancia intermedia, con una muy buena relación calidad-precio para un uso ocasional.',
+'Le recomiendo una progresiva de gama media: ofrece zonas de visión más cómodas que la básica y una adaptación más fácil para llevarlas todo el día.',
+'Le recomiendo una progresiva de gama alta: tiene un campo de visión más amplio y transiciones más suaves entre distancias, justo lo que necesita con su ritmo visual.',
+'Le recomiendo una progresiva premium: es la gama más personalizada, la que más confort y campo de visión da, pensada para quien quiere la mejor experiencia.'];
+const IA={'1.5':'El índice 1.5 es el estándar y es suficiente para su graduación: la lente queda con un grosor y peso normales.','1.6':'Con su graduación le propongo el índice 1.6: la lente es más fina y ligera que la estándar y se nota en la estética y en la comodidad.','1.67':'Con su graduación le propongo el índice 1.67: la lente es bastante más fina y ligera, y se ve mucho mejor en la montura.','1.74':'Con su graduación el índice 1.74 es el más adecuado: es el más fino y ligero, así evitamos cristales gruesos y pesados.'};
+const TA={at:'Antirreflejante Ar Top: reduce los reflejos y las molestias de las luces, ve más nítido y los ojos se cansan menos. Además, sus ojos se ven mejor desde fuera.',ap:'Artop+: es el antirreflejante superior, muy recomendable si conduce de noche o su trabajo visual es exigente, porque reduce deslumbramientos.',bl:'Tratamiento Blue: filtra parte de la luz azul de las pantallas y ayuda a que la vista esté más descansada tras muchas horas de ordenador y móvil.',fh:'Foto Hc: la lente se oscurece sola con el sol, así lleva una sola gafa para interior y exterior.',fa:'Foto Ar: se oscurece sola con el sol y además lleva antirreflejante, así tiene una sola gafa cómoda tanto dentro como fuera.'};
+function argum(r,tr,total){
+ const L=[GA[r.g],IA[r.ix]];
+ const e=val('exp');
+ if(val('ast')==1)L.push('Como su astigmatismo es alto, subimos un índice para que la lente quede más fina y ligera.');
+ if(e==0)L.push('Al ser su primera progresiva, elegir bien la gama es importante: facilita mucho la adaptación en los primeros días.');
+ if(e==2)L.push('Como no se adaptó bien antes, no conviene escatimar: una lente de esta gama reduce las zonas borrosas y facilita la adaptación.');
+ if(val('pri')==0)L.push('Como el precio le importa, le he buscado la opción que mejor equilibra lo que necesita con lo que paga.');
+ if(val('pri')==2)L.push('Como busca la máxima comodidad, esta es la opción que más se la da.');
+ tr.forEach(k=>L.push(TA[k]));
+ if(extra=='s')L.push('Si añade una segunda gafa ahora, le sale a mejor precio que una gafa nueva más adelante.');
+ if(extra=='k')L.push('Con la opción Komparte le sale a mejor precio añadir la segunda gafa en este momento.');
+ L.push('El total de su gafa sería de '+total+' €.');
+ return L.map(x=>'<p>'+x+'</p>').join('');
+}
+function paint(){
+ document.querySelectorAll('#qs .chip').forEach(b=>b.classList.toggle('on',ans[b.dataset.q]===+b.dataset.i));
+ if(window.speechSynthesis)speechSynthesis.cancel();
+ const r=calc(),res=$('#res'),bar=$('#bar');
+ if(!r){const n=Q.filter(q=>!(q.id in ans)&&(q.p||q.id=='gra'||q.id=='ast')).length;
+  res.innerHTML=`<div class="empty">Faltan ${n} pregunta${n>1?'s':''} para calcular la recomendación.</div>`;bar.style.display='none';return}
+ tsel=new Set([...tsel].filter(k=>r.av.includes(k)));
+ const tr=[...tsel],tt=tr.reduce((s,k)=>s+T[k][1],0);
+ const ex=extra=='s'?r.pr[1]:extra=='k'?r.pr[2]:0;
+ const total=r.pr[0]+tt+ex,col=`var(${GC[r.g]})`;
+ const tbtn=ALL.map(k=>{const a=r.av.includes(k);return `<button class="chip ${tsel.has(k)?'on':''} ${a?'':'off'}" ${a?`data-t="${k}"`:'disabled'}>${T[k][0]} +${T[k][1]} €</button>`}).join('');
+ res.innerHTML=`<div class="band" style="background:${col}"><b>Gama ${GN[r.g]} · índice ${r.ix}</b><span>${r.pts} de 8 puntos</span></div>
+ <div class="body">
+ <div class="row"><span>Lente base</span><span>${eur(r.pr[0])}</span></div>
+ ${tr.map(k=>`<div class="row"><span>${T[k][0]}</span><span>+${T[k][1]} €</span></div>`).join('')}
+ ${extra?`<div class="row"><span>${extra=='s'?'2ª gafa':'Komparte'}</span><span>+${ex} €</span></div>`:''}
+ <div class="row t"><span>Total</span><span>${eur(total)}</span></div>
+ ${r.note?`<p class="note">${r.note}</p>`:''}
+ <div class="arg"><b>Cómo explicárselo al paciente</b>${argum(r,tr,total)}<button class="chip" id="vz" style="margin-top:8px">🔊 Leer en voz alta</button></div>
+ <div class="lbl">Tratamientos (toca para añadir o quitar)</div><div class="opts">${tbtn}</div>
+ <div class="lbl">Segunda gafa</div><div class="opts">
+ <button class="chip ${extra==null?'on':''}" data-e="n">Ninguna</button>
+ <button class="chip ${extra=='s'?'on':''}" data-e="s">2ª gafa +${r.pr[1]} €</button>
+ <button class="chip ${extra=='k'?'on':''}" data-e="k">Komparte +${r.pr[2]} €</button></div>
+ <p class="note">Precios según la tarifa. Comprueba la disponibilidad de cada tratamiento en tienda.</p></div>`;
+ const vz=res.querySelector('#vz');if(vz)vz.onclick=voz;
+ res.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{toggle(b.dataset.t);paint()});
+ res.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{extra=b.dataset.e=='n'?null:b.dataset.e;paint()});
+ bar.style.display='flex';
+ $('#bt').innerHTML=`<span class="dot" style="background:${col}"></span>Gama ${GN[r.g]} · ${r.ix}`;$('#bp').textContent=eur(total);
+}
+function voz(){
+ const s=window.speechSynthesis;if(!s){alert('Este móvil no permite leer en voz alta.');return}
+ const b=$('#vz');
+ if(s.speaking){s.cancel();b.textContent='🔊 Leer en voz alta';return}
+ const t=[...document.querySelectorAll('.arg p')].map(p=>p.textContent).join(' ');
+ const u=new SpeechSynthesisUtterance(t);u.lang='es-ES';u.rate=.95;
+ const v=s.getVoices().find(x=>x.lang&&x.lang.toLowerCase().startsWith('es'));if(v)u.voice=v;
+ u.onend=()=>{const z=$('#vz');if(z)z.textContent='🔊 Leer en voz alta'};
+ u.onerror=e=>{const z=$('#vz');if(z)z.textContent='🔊 Leer en voz alta';if(e.error!=='canceled'&&e.error!=='interrupted')alert('No se pudo reproducir la voz ('+(e.error||'error')+'). Abre esta página en Safari o Chrome y comprueba el volumen y el modo silencio.')};
+ b.textContent='⏹ Parar';s.speak(u);
+}
+$('#bar').onclick=()=>$('#res').scrollIntoView({behavior:'smooth'});
+$('#reset').onclick=()=>{ans={};tsel=new Set();extra=null;paint();scrollTo({top:0,behavior:'smooth'})};
+const PQ=['exp','pan','noc','ext','pri','rep'];let ps=0;
+function pshow(){
+ const pm=$('#pm');pm.style.display='flex';
+ if(ps>=PQ.length){pm.innerHTML='<div class="pbox"><div class="pprog"><i style="width:100%"></i></div><h2>Muchas gracias</h2><p>Hemos terminado. Devuelva el móvil a su óptico para que le explique su recomendación.</p><button class="pbig" id="pdone">Continuar</button></div>';$('#pdone').onclick=()=>{pm.style.display='none';suggest();paint();scrollTo(0,0)};return}
+ const q=Q.find(x=>x.id==PQ[ps]);
+ pm.innerHTML='<div class="pbox"><div class="pprog"><i style="width:'+(ps/PQ.length*100)+'%"></i></div><p class="pn">Pregunta '+(ps+1)+' de '+PQ.length+'</p><h2>'+q.t+'</h2>'+q.o.map((o,i)=>'<button class="pbig" data-i="'+i+'">'+o[0]+'</button>').join('')+(ps?'<button class="pback">Atrás</button>':'')+'</div>';
+ pm.querySelectorAll('.pbig').forEach(b=>b.onclick=()=>{ans[q.id]=+b.dataset.i;ps++;pshow()});
+ const bk=pm.querySelector('.pback');if(bk)bk.onclick=()=>{ps--;pshow()};
+}
+$('#pbtn').onclick=()=>{ans={};extra=null;tsel=new Set();paint();ps=0;pshow()};
+build();paint();
+</script></body></html>
